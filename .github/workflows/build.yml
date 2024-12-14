@@ -80,7 +80,7 @@ jobs:
           # Make binary executable
           chmod +x "$APP_NAME/Contents/MacOS/$BINARY_NAME"
           echo "App bundle created at $APP_NAME"
-          ls
+          ls target/${{ matrix.target }}/release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
