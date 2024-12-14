@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: macroquad-app-macos-${{ matrix.target }}
-          path: macroquad-poc.app/**/*
+          path: macroquad-poc.app
 
   build-other-platforms:
     name: Build on ${{ matrix.os }}
