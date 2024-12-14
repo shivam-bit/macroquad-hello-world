@@ -41,7 +41,7 @@ jobs:
         run: |
           # Project name - modify this to match your actual binary name
             ls target/${{ matrix.target }}/release
-            BINARY_NAME=$(basename $(find target/${{ matrix.target }}/release -type f -executable) | sed 's/\.exe$//')
+            BINARY_NAME="macroquad-poc"
             echo "Binary name: $BINARY_NAME"
 
           APP_NAME="${BINARY_NAME}.app"
