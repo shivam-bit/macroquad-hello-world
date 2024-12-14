@@ -1,0 +1,134 @@
+name: Macroquad Cross-Platform Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target: 
+          - aarch64-apple-darwin
+          - x86_64-apple-darwin
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        target: ${{ matrix.target }}
+
+    - name: Install Dependencies
+      run: |
+        brew install pkg-config
+        brew install freetype
+
+    - name: Build Project
+      run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Create macOS .app Bundle
+      run: |
+        # Project name - modify this to match your actual binary name
+        BINARY_NAME=$(basename $(find target/${{ matrix.target }}/release -type f -executable) | sed 's/\.exe$//')
+        APP_NAME="${BINARY_NAME}.app"
+        
+        # Create .app bundle structure
+        mkdir -p "$APP_NAME/Contents/MacOS"
+        mkdir -p "$APP_NAME/Contents/Resources"
+        
+        # Copy binary
+        cp "target/${{ matrix.target }}/release/$BINARY_NAME" "$APP_NAME/Contents/MacOS/$BINARY_NAME"
+        
+        # Create Info.plist
+        cat > "$APP_NAME/Contents/Info.plist" << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleExecutable</key>
+            <string>$BINARY_NAME</string>
+            <key>CFBundleIconFile</key>
+            <string></string>
+            <key>CFBundleIdentifier</key>
+            <string>com.macro-quad-poc.$BINARY_NAME</string>
+            <key>CFBundleName</key>
+            <string>$BINARY_NAME</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>NSHighResolutionCapableWindow</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
+        
+        # Make binary executable
+        chmod +x "$APP_NAME/Contents/MacOS/$BINARY_NAME"
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macroquad-app-macos-${{ matrix.target }}
+        path: ${{ env.BINARY_NAME }}.app/**/*
+
+  build-other-platforms:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: macroquad-app-linux
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: macroquad-app-windows
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        target: ${{ matrix.target }}
+
+    # Platform-specific dependencies
+    - name: Install Linux Dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libx11-dev \
+          libxi-dev \
+          libgl1-mesa-dev \
+          libasound2-dev
+
+    - name: Install Windows Dependencies
+      if: matrix.os == 'windows-latest'
+      run: |
+        choco install pkg-config
+
+    - name: Build Project
+      run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: |
+          target/${{ matrix.target }}/release/macroquad-app*
+          target/${{ matrix.target }}/release/*.exe
