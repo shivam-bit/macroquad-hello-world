@@ -40,8 +40,9 @@ jobs:
       - name: Create macOS .app Bundle
         run: |
           # Project name - modify this to match your actual binary name
-          BINARY_NAME=$(basename $(find target/${{ matrix.target }}/release -type f -executable) | sed 's/\.exe$//')
-          echo "Binary name: $BINARY_NAME"
+            ls target/${{ matrix.target }}/release
+            BINARY_NAME=$(basename $(find target/${{ matrix.target }}/release -type f -executable) | sed 's/\.exe$//')
+            echo "Binary name: $BINARY_NAME"
 
           APP_NAME="${BINARY_NAME}.app"
           echo "App name: $APP_NAME"
