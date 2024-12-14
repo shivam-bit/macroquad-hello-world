@@ -81,6 +81,8 @@ jobs:
           chmod +x "$APP_NAME/Contents/MacOS/$BINARY_NAME"
           echo "App bundle created at $APP_NAME"
           ls target/${{ matrix.target }}/release
+          echo "Contents of $APP_NAME:"
+          ls "$APP_NAME/Contents/MacOS"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
